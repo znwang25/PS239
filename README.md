@@ -14,10 +14,10 @@ This projects scrapes data from Taiwan Sinica's website, and use the spatial inf
 
 #### Data
 
-1. bio\_hist.csv: Contains data from the Taiwan Sinica collected via get_biohist.py. Includes information on records of famous people during Ming and Qing dynasty.
+1. bio\_hist.csv: Contains data from the Taiwan Sinica collected via get_biohist.py. Includes information on records of famous people during Ming and Qing dynasty. This files is using UTF-8 encoding.
 2. bio\_hist_gis.csv: The final Analysis Dataset after cleaning bio\_hist.csv.
-3. light05chn.tif: Night light raster data in 2005 for China, raw data from NOAA. 
-4.1999County: Shapfiles for Chinese county borders.
+3. light05chn.tif: Night light raster data in 2005 for China, raw data from NOAA.
+4. 1999County: Shapfiles for Chinese county borders.
 
 #### Code
 
@@ -29,8 +29,8 @@ This projects scrapes data from Taiwan Sinica's website, and use the spatial inf
 
 1. fig1\_bio_pts.png: Visualize spatial distribution of those historical records.
 2. fig2\_bio_county.png: Visualize spatial distribution of the record after aggregating to county level.
-3.fig3\_light_raw.png: Visualize the raw raster data of night light.
-4.fig4\_light_county.png: Visualize spatial distribution of the night light after aggregating to county level.
-5.reg\_results.html: Simple regression result.
-6.reg.png: Visualize the regression.
+3. fig3\_light_raw.png: Visualize the raw raster data of night light. 
+4. fig4\_light_county.png: Visualize spatial distribution of the night light after aggregating to county level.
+5. reg\_results.html: Simple regression result.
+6. reg.png: Visualize the regression.
 
