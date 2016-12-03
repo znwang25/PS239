@@ -1,44 +1,36 @@
-This is a template you can use for replication code. Fill in each section with information on your own project.
+# PS239
+PS239 project
 
 ## Short Description
 
-Give a short, 1-2 paragraph description of your project. Focus on the code, not the theoretical / substantive / academic side of things. 
+This projects scrapes data from Taiwan Sinica's website, and use the spatial information in the data to show some graphs.
 
 ## Dependencies
 
-List what software your code depends on, as well as version numbers, like so:.
-
-1. R, version 3.1
-2. Python, version 2.7, Anaconda distribution.
-
-(In your scripts, includes commands that install required packages.)
+1. R,
+2. Python, version 3.5, Anaconda distribution.
 
 ## Files
 
-List all other files contained in the repo, along with a brief description of each one, like so:
-
 #### Data
 
-1. polity.csv: The PolityVI dataset, available here: http://www.systemicpeace.org/inscrdata.html
-2. nyt.csv: Contains data from the New York Times API collected via collect-nyt.ipynb . Includes information on all articles containing the term "Programmer Cat", 1980-2010.
-3. analysis-dataset.csv: The final Analysis Dataset derived from the raw data above. It includes country-year values for all UN countries 1980-2010, with observations for the following variables: 
-    - *ccode*: Correlates of War numeric code for country observation
-    - *year*: Year of observation
-    - *polity*: PolityVI score
-    - *nyt*: Number of New York Times articles about "Programmer Cat"
+1. bio\_hist.csv: Contains data from the Taiwan Sinica collected via get_biohist.py. Includes information on records of famous people during Ming and Qing dynasty.
+2. bio\_hist_gis.csv: The final Analysis Dataset after cleaning bio\_hist.csv.
+3. light05chn.tif: Night light raster data in 2005 for China, raw data from NOAA. 
+4.1999County: Shapfiles for Chinese county borders.
 
 #### Code
 
-1. 01_collect-nyt.py: Collects data from New York Times API and exports data to the file nyt.csv
-2. 02_merge-data.R: Loads, cleans, and merges the raw Polity and NYT datasets into the Analysis Dataset.
-2. 03_analysis.R: Conducts descriptive analysis of the data, producing the tables and visualizations found in the Results directory.
+1. 01-get_biohist.py: Scrapes the Sinica website to get historical biography data
+2. 02-data_clean.R: Cleans the raw datasets scraped.
+2. 03-bio_gis.R: Conducts descriptive analysis of the data, producing the tables and visualizations found in the Results directory.
 
 #### Results
 
-1. coverage-over-time.jpeg: Graphs the number of articles about each region over time.
-2. regression-table.txt: Summarizes the results of OLS regression, modelling *nyt* on a number of covariates.
-
-## More Information
-
-Include any other details you think your user might need to reproduce your results. You may also include other information such as your contact information, credits, etc.
+1. fig1\_bio_pts.png: Visualize spatial distribution of those historical records.
+2. fig2\_bio_county.png: Visualize spatial distribution of the record after aggregating to county level.
+3.fig3\_light_raw.png: Visualize the raw raster data of night light.
+4.fig4\_light_county.png: Visualize spatial distribution of the night light after aggregating to county level.
+5.reg\_results.html: Simple regression result.
+6.reg.png: Visualize the regression.
 
