@@ -1,0 +1,69 @@
+PS239: Path Dependance of Economic Development
+========================================================
+author: Zenan Wang  
+date: 11/30/2016
+autosize: true
+
+Data
+========================================================
+
+
+- Grand Secretariat Archive Project
+- NOAA Nighttime Lights Time Series (2005)
+- China County Shapefile
+
+Scraping Website with Python
+========================================================
+[Biography page](http://archive.ihp.sinica.edu.tw/ttscgi/ttsquery?0:0:mctauac:NO%3DNO2)
+
+![Example](figure1.png)
+```{r, include=FALSE}
+# remove all objects
+rm(list=ls())
+x <- c("rgdal", "rgeos", "sp", "maptools", "rasterVis", "tidyverse","magrittr","raster", "parallel", "doParallel", "foreach", "haven","readxl","sf")
+# install.packages(x) # warning: uncommenting this may take a number of minutes
+lapply(x, library, character.only = TRUE) # load the required packagesgetwd
+```
+
+Cleaning Biography Data in R
+========================================================
+- Extract GPS information and perform GIS spatial manipulation
+
+```{r, echo=F, fig.cap="image description", out.width = '75%'}
+knitr::include_graphics('fig1_bio_pts.png')
+```
+
+
+Cleaning Biography Data in R
+========================================================
+- Spatial Aggregation to County Level
+
+```{r, echo=F, fig.cap="image description", out.width = '75%'}
+knitr::include_graphics('fig2_bio_county.png')
+```
+
+
+Visualize Night Light Data in R
+========================================================
+- Night Light in 2005 
+
+```{r, echo=F, fig.cap="image description", out.width = '75%'}
+knitr::include_graphics('fig3_light_raw.png')
+```
+
+Visualize Night Light Data in R
+========================================================
+- Aggregate night light data to county level
+
+
+```{r, echo=F, fig.cap="image description", out.width = '75%'}
+knitr::include_graphics('fig4_light_county.png')
+```
+
+Regression
+========================================================
+- Regression
+
+```{r, echo=F, fig.cap="image description", out.width = '75%'}
+knitr::include_graphics('reg.png')
+```

@@ -5,7 +5,7 @@
 # This file cleans GIS data and visualize the data
 
 # Load libraries
-x <- c("rgdal", "rgeos", "sp", "maptools", "rasterVis", "tidyverse","magrittr","raster", "parallel", "doParallel", "foreach", "haven","readxl")
+x <- c("rgdal", "rgeos", "sp", "sf", "maptools", "rasterVis", "tidyverse","magrittr","raster", "parallel", "doParallel", "foreach", "haven","readxl")
 
 # install.packages(x) # warning: uncommenting this may take a number of minutes
 lapply(x, library, character.only = TRUE) # load the required packagesgetwd
@@ -14,16 +14,20 @@ lapply(x, library, character.only = TRUE) # load the required packagesgetwd
 getCPLConfigOption("SHAPE_ENCODING")
 setCPLConfigOption("SHAPE_ENCODING", "UTF-8")
 # Importing China county boundary GIS data
-china_cnty <- readOGR(dsn="../Data/1999County",layer="BOUNT_poly")
+china_cnty <- readOGR(dsn="Data/1999County",layer="BOUNT_poly")
 # Change projection into WGS84
-china_cnty %<>% spTransform( CRS("+init=epsg:4326"))
+china_cnty <- china_cnty %>% 
+  spTransform( CRS("+init=epsg:4326"))%>%
+  st_as_sf%>%
+  st_set_crs(4326)%>%
+  st_simplify  
 
 # Now cleaning the data I scraped
-bio_gis <- read_csv("../Data/bio_hist_gis.csv")
-data <- bio_gis[c("lon","lat","pid","birthyr_en","dynasty")]
-# Fixed some problems in GIS information. Those human inputing errors.
+bio_gis <- read_csv("Data/bio_hist_gis.csv")
+data <- bio_gis%>%select(lon, lat,pid, birthyr_en, dynasty)%>%
+  group_by(pid) %>% filter(row_number() == 1) %>% ungroup
+# Fixed some problems in GIS information. Those are human inputing errors.
 # Examples are placing the dot at the wrong place
-data%<>%group_by(pid) %>% filter(row_number(lon) == 1)
 data[which(data$lon==1053.6),"lon"] <- 105.36
 # or reversing the order of the longitutde and latitude 
 temp <- data[which(data$lat>90),c("lon","lat")]
@@ -42,27 +46,28 @@ ToSpatialPoint <- function(data){
   return(bio_pts)
 }
 
-bio_pts <- ToSpatialPoint(data)
+bio_pts <- ToSpatialPoint(data)%>%st_as_sf%>%st_set_crs(4326)
 
-# saveRDS(bio_pts, file="../Data/bio_pts.rds")
-# saveRDS(china_cnty, file="../Data/china_cnty.rds")
+
+bio_pts%>% write_rds("Data/bio_pts.rds")
+china_cnty%>%saveRDS("Data/china_cnty.rds")
 
 # Aggregate the biography data onto county level, counting how many people falling into each county
-bio_agg <- aggregate(x = bio_pts["pid"], by = china_cnty, FUN = length)
+bio_agg <- aggregate(x = bio_pts['pid'], by = china_cnty, FUN = length)
 # add this into the china_cnty dataset
 china_cnty$n_bios <-bio_agg$pid
 
 # Importing night light data
 # Note: raw night light data is from NOAA, but data used here has been cropped by myself for other project.
-light05.chn <- raster("../Data/light05chn.tif")
+light05.chn <- raster("Data/light05chn.tif")
 # Increase by a factor of 20 to 10*10 arcminutes,approxmiately 18.5km (1 minute is 1.852 km )
 light05.chn <- aggregate(light05.chn,fact=20, fun=mean)
-# Change raster to polygon
-light <- rasterToPolygons(light05.chn)
-# Change projection into WGS84
-light %<>% spTransform( CRS("+init=epsg:4326"))
+# Change raster to polygon and Change projection into WGS84
+light <- rasterToPolygons(light05.chn)%>% spTransform( CRS("+init=epsg:4326"))%>%
+  st_as_sf%>%
+  st_set_crs(4326)
 # Give it a name
-names(light@data) <- "light"
+light <- light%>% rename(light=light05chn)
 # Aggregate the biography data onto county level, averaging the level of luminosity of the county at night
 light_agg <- aggregate(x = light["light"], by = china_cnty, FUN = mean)
 # add this into the china_cnty dataset
@@ -70,43 +75,54 @@ china_cnty$light <-light_agg$light
 
 # Graphical analysis
 # Need to fortify the spatial data in order to plot in ggplot
-cnty_f <- fortify(china_cnty)
-china_cnty$id <- row.names(china_cnty)
-cnty_f <- left_join(cnty_f, china_cnty@data)
-cnty_f$log_n<-log(cnty_f$n_bios) 
-cnty_f$log_light<-log(cnty_f$light) 
+china_cnty <- china_cnty%>%mutate(log_n = log(n_bios), log_light=log(light))
 
 # Visualize spatial distribution of those records
-ggplot(data=as.data.frame(bio_pts), aes(x=lon, y=lat))+geom_point(color="red")+geom_polygon(data=china_cnty, aes(x=long, y=lat, group=group),fill=NA, color="black",size=0.05)
-ggsave("../Results/fig1_bio_pts.png")
+ggplot(china_cnty)+
+  geom_sf(size=0.1)+
+  geom_sf(data = bio_pts,color='red',size=0.1)+
+theme_bw()+
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+ggsave("Results/fig1_bio_pts.png")
 
 # Visualize spatial distribution of the record after aggregating to county level
-ggplot(data=cnty_f, aes(x=long, y=lat, group=group,fill=log_n))+
-  geom_polygon(color="black",size=0.05)+ scale_fill_gradient2( low = "#001a4d",mid = "#0066FF", high = "yellow",na.value = "#001a4d",midpoint = 3)
-ggsave("../Results/fig2_bio_county.png")
+ggplot(china_cnty)+
+  geom_sf(size=0.1,aes(fill = log_n))+
+  scale_fill_gradient(low = "#fff7ec", high = "#d7301f",na.value = 'NA')+
+  theme_bw()+
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+ggsave("Results/fig2_bio_county.png")
 
 # Visualize the raw raster data of night light
 gplot(light05.chn,maxpixels=1440000)+
   geom_tile(aes(fill=value), alpha=0.8)+
-  scale_fill_gradient2( low = "#001a4d",mid = "#0066FF", high = "yellow",na.value = "#001a4d",midpoint = 30)+
-  coord_equal()
-ggsave("../Results/fig3_light_raw.png")
+  scale_fill_gradient2( low = "#081d58",mid = "#0066FF", high = "yellow", na.value = 'NA',midpoint = 30)+
+  theme_bw()+
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+ggsave("Results/fig3_light_raw.png")
 
 # Visualize spatial distribution of the night light after aggregating to county level
-ggplot(data=cnty_f, aes(x=long, y=lat, group=group,fill=log_light))+
-  geom_polygon(color="black",size=0.05)+  scale_fill_gradient2( low = "#001a4d",mid = "#0066FF", high = "yellow",na.value = "#001a4d",midpoint = -1.5)
-ggsave("../Results/fig4_light_county.png")
+ggplot(china_cnty)+
+  geom_sf(size=0.1, aes(fill = log_light))+
+  scale_fill_gradient2( low = "#081d58",mid = "#0066FF", high = "yellow", na.value = 'NA',midpoint = -2)+
+  theme_bw()+
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank())
+ggsave("Results/fig4_light_county.png")
 
 # Simple regression analysis
-data_reg <- china_cnty@data
-reg <- lm(light~n_bios,data_reg)
+reg <- lm(light~n_bios,china_cnty)
 summary(reg)
 library(stargazer)
-stargazer(reg, type = "html",out = "../Results/reg_results.html",
+stargazer(reg, type = "html",out = "Results/reg_results.html",
  title = "Number of records and 2005 night light level",
  covariate.labels = "Number of records during Ming and Qing",
           dep.var.labels   = " Night light level in 2005")
 
 # Visualize the regression
-ggplot(data=data_reg,aes(x=n_bios, y=light))+geom_point()+scale_x_log10()+scale_y_log10()+ geom_smooth(method="lm")
-ggsave("E:/Dropbox/Academic/PhD/PS239T/project/reg.png")
+ggplot(data=china_cnty,aes(x=n_bios, y=light))+
+  geom_point()+scale_x_log10()+scale_y_log10()+ geom_smooth(method="lm")
+ggsave("Results/reg.png")
